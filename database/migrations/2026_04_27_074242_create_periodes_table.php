@@ -1,24 +1,29 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('periods', function (Blueprint $table) {
+        Schema::create('periodes', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Contoh: 'Semester 1', 'Semester 2', dst
-            $table->integer('semester_number'); // 1, 2, atau 3
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->char('tahun_akademik', 9);
+            $table->char('semester', 1);
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('periods');
+        Schema::dropIfExists('periodes');
     }
 };

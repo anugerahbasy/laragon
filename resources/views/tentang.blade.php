@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=\, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
 </head>
 <body>
-    <h1>ini tentang</h1>
-    <p>halamantentang</p>
+    <h1>Halaman Tentang</h1>
+    <p>Ini adalah halaman tentang kami.</p>
 </body>
 </html>
