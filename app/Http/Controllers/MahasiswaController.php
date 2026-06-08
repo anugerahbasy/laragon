@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mahasiswa;
 use App\Models\Prodi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http; // Pastikan Facade Http ter-import
 
 class MahasiswaController extends Controller
 {
@@ -13,9 +14,9 @@ class MahasiswaController extends Controller
      */
     public function index()
     {
-        // akses tabel Mahasiswa
+        // Akses tabel Mahasiswa dengan relasi prodi
         $mahasiswa = Mahasiswa::with('prodi')->get(); 
-        return view('mahasiswa.index', compact('mahasiswa')); // kirim data ke view
+        return view('mahasiswa.index', compact('mahasiswa')); 
     }
 
     /**
@@ -23,44 +24,68 @@ class MahasiswaController extends Controller
      */
     public function create()
     {
-        // akses tabel Prodi untuk menampilkan pilihan prodi di form
+        // Akses tabel Prodi untuk menampilkan pilihan prodi di form
         $prodi = Prodi::all();
-        return view('mahasiswa.create', compact('prodi')); // kirim data ke view
+        return view('mahasiswa.create', compact('prodi')); 
     }
 
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-        //validasi input 
         $input = $request->validate([
-            'npm' => 'required|unique:mahasiswas,npm', // npm harus unik di tabel mahasiswas
             'nama' => 'required',
-            'prodi_id' => 'required|exists:prodis,id', // prodi_id harus ada di tabel prodis
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'npm' => 'required|unique:mahasiswas',
+            'tempat_lahir' => 'required',
+            'tanggal_lahir' => 'required|date',
+            'jk' => 'required',
+            'asal_sma' => 'required',
+            'foto' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            'prodi_id' => 'required',
         ]);
-        //upload foto
-        if ($request->hasFile('foto')) {
-            $foto = $request->file('foto'); // ambil file foto
-            $nama_foto = time() . '_' . $foto->getClientOriginalName(); // buat nama unik untuk foto
-            $foto->storeAs('fotos', $nama_foto, 'public'); // simpan foto di folder storage/app/public/fotos
-        } else {
-            $nama_foto = null; // jika tidak ada foto, set nama_foto ke null
-        }
-        $input['foto'] = $nama_foto; // tambahkan nama_foto ke data input
-        //simpan data ke database
-        Mahasiswa::create($input);
-        //redirect ke halaman index dengan pesan sukses
-        return redirect()->route('mahasiswa.index')->with('success', 'Mahasiswa berhasil ditambahkan.');
-    }
 
+        if ($request->hasFile('foto')) {
+            try {
+                $file = $request->file('foto');
+                $response = Http::asMultipart()->post(
+                    'https://api.cloudinary.com/v1_1/' . env('CLOUDINARY_CLOUD_NAME') . '/image/upload',
+                    [
+                        [
+                            'name'     => 'file',
+                            'contents' => fopen($file->getRealPath(), 'r'),
+                            'filename' => $file->getClientOriginalName(),
+                        ],
+                        [
+                            'name'     => 'upload_preset',
+                            'contents' => env('CLOUDINARY_UPLOAD_PRESET'),
+                        ],
+                    ]
+                );
+
+                $result = $response->json();
+                if (isset($result['secure_url'])) {
+                    $input['foto'] = $result['secure_url'];
+                } else {
+                    return back()->withErrors(['foto' => 'Cloudinary upload error: ' . ($result['error']['message'] ?? 'Unknown error')]);
+                }
+            } catch (\Exception $e) {
+                return back()->withErrors(['foto' => 'Cloudinary error: ' . $e->getMessage()]);
+            }
+        }
+
+        Mahasiswa::create($input);
+        return redirect()->route('mahasiswa.index')->with('success', 'Mahasiswa created successfully.');
+    }
     /**
      * Display the specified resource.
      */
     public function show(Mahasiswa $mahasiswa)
     {
-        //
+        return view('mahasiswa.show', compact('mahasiswa'));
     }
 
     /**
@@ -68,7 +93,8 @@ class MahasiswaController extends Controller
      */
     public function edit(Mahasiswa $mahasiswa)
     {
-        //
+        $prodi = Prodi::all();
+        return view('mahasiswa.edit', compact('mahasiswa', 'prodi'));
     }
 
     /**
@@ -76,7 +102,7 @@ class MahasiswaController extends Controller
      */
     public function update(Request $request, Mahasiswa $mahasiswa)
     {
-        //
+        // Tambahkan logic update kamu di sini nanti jika diperlukan
     }
 
     /**
@@ -84,6 +110,7 @@ class MahasiswaController extends Controller
      */
     public function destroy(Mahasiswa $mahasiswa)
     {
-        //
+        $mahasiswa->delete();
+        return redirect()->route('mahasiswa.index')->with('success', 'Mahasiswa deleted successfully.');
     }
 }
