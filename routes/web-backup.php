@@ -25,3 +25,7 @@ Route::resource('/prodi', ProdiController::class);
 Route::resource('/mahasiswa', MahasiswaController::class);
 
 Route::get('/dashboard', [DashboardController::class, 'index']);
+
+Route::get('/debug-env', function () {
+    return 'APP_KEY is: ' . (env('APP_KEY') ? 'Detected' : 'Empty');
+});
